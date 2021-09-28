@@ -41,6 +41,16 @@ app.post("/urls", (req, res) => {
   res.render("urls_show", { shortURL: tinyURL, longURL: req.body.longURL });
 });
 
+app.post("/urls/:shortURL/edit", (req, res) => {
+  res.redirect(`/urls/${req.params.shortURL}`);
+});
+
+app.post("/urls/:shortURL", (req, res) => {
+  urlDatabase[req.params.shortURL] = req.body.newURL;
+  const templateVars = { urls: urlDatabase };
+  res.render("urls_index", templateVars);
+});
+
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
