@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
+
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({extended: true}));
 const PORT = 8080; // default port 8080
@@ -26,6 +27,12 @@ app.get("/u/:shortURL", (req, res) => {
 
 app.get("/", (req, res) => {
   res.render("index");
+});
+
+app.post("/urls/:shortURL/delete", (req, res) => {
+  delete urlDatabase[req.params.shortURL];
+  const templateVars = { urls: urlDatabase };
+  res.render("urls_index", templateVars);
 });
 
 app.post("/urls", (req, res) => {
