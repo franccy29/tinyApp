@@ -64,6 +64,10 @@ const users = {
   }
 };
 
+app.get("/", (req, res) => {
+  res.redirect("/urls");
+});
+
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
