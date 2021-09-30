@@ -1,9 +1,11 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 app.set('view engine', 'ejs');
+
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 
@@ -47,16 +49,17 @@ const urlDatabase = {
   }
 };
 
+
 const users = {
   "userRandomID": {
     id: "userRandomID",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur"
+    password: "$2a$10$ipBLc6E0JffCgLeoRJctfezURNxVyFyzDftDp1OKSFPc6g2340GjG" // "purple-monkey-dinosaur"
   },
   "user2RandomID": {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "dishwasher-funk"
+    password: "$2a$10$JADQhviRFLut1TYS8miLuOIQdHk5eHN3Yq0TKEuSKThloFANA47cC" // "dishwasher-funk"
   }
 };
 
@@ -137,7 +140,8 @@ app.post("/register", (req, res) => {
   const password = req.body.password;
   const id = generateRandomString();
   if (email !== "" && email.includes("@") && email.includes(".") && password !== "" && !emailAlreadyExist(email)) {
-    users[id] = { id, email, password };
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    users[id] = { id, email, password: hashedPassword };
     res.cookie("user_id", id);
     res.redirect("/urls");
   } else {
@@ -150,7 +154,7 @@ app.post("/login", (req, res) => {
   const password = req.body.password;
   if (emailAlreadyExist(email)) {
     const id = emailAlreadyExist(email);
-    if (users[id].password === password) {
+    if (bcrypt.compareSync(password, users[id].password)) {
       res.cookie("user_id", id);
       res.redirect("/urls");
     } else {
