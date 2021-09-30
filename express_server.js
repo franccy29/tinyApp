@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const salt = bcrypt.genSaltSync(10);
 const cookieSession = require('cookie-session');
 const {emailAlreadyExist, allShortUrlOfAnId, generateRandomString} = require("./helper");
+const methodOverride = require('method-override');
 
 const PORT = 8080; // default port 8080
 const app = express();
@@ -16,16 +17,19 @@ app.use(cookieSession({
   name: 'session',
   keys: ["Some way to encrypt the values", "$!~`yEs123bla!!%"]
 }));
+app.use(methodOverride('_method'));
 
 
 const urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
-    userID: "user2RandomID"
+    userID: "user2RandomID",
+    visited: 0
   },
   i3BoGr: {
     longURL: "https://www.google.ca",
-    userID: "userRandomID"
+    userID: "userRandomID",
+    visited: 0
   }
 };
 
@@ -51,10 +55,11 @@ app.get("/", (req, res) => {
 
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL].longURL;
+  urlDatabase[req.params.shortURL].visited += 1;
   res.redirect(longURL);
 });
 
-app.post("/urls/:shortURL/delete", (req, res) => {
+app.delete("/urls/:shortURL/delete", (req, res) => {
   delete urlDatabase[req.params.shortURL];
   const templateVars = { urls: allShortUrlOfAnId(req.session.userId, urlDatabase), user: users[req.session.userId] };
   res.render("urls_index", templateVars);
@@ -63,14 +68,14 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 app.post("/urls", (req, res) => {
   if (req.session.userId) {
     const tinyURL = generateRandomString();
-    urlDatabase[tinyURL] = {longURL: req.body.longURL, userID: req.session.userId};
+    urlDatabase[tinyURL] = {longURL: req.body.longURL, userID: req.session.userId, visited: 0};
     res.render("urls_show", { shortURL: tinyURL, longURL: req.body.longURL, user: users[req.session.userId] });
   } else {
     res.redirect("/login");
   }
 });
 
-app.post("/urls/:shortURL/edit", (req, res) => {
+app.put("/urls/:shortURL/edit", (req, res) => {
   if (req.session.userId && req.session.userId === urlDatabase[req.params.shortURL].userID) {
     res.redirect(`/urls/${req.params.shortURL}`);
   } else {
