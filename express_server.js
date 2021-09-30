@@ -4,8 +4,9 @@ const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
 const salt = bcrypt.genSaltSync(10);
 const cookieSession = require('cookie-session');
-const {emailAlreadyExist} = require("./helper");
+const {emailAlreadyExist, allShortUrlOfAnId, generateRandomString} = require("./helper");
 
+const PORT = 8080; // default port 8080
 const app = express();
 app.set('view engine', 'ejs');
 
@@ -16,26 +17,6 @@ app.use(cookieSession({
   keys: ["Some way to encrypt the values", "$!~`yEs123bla!!%"]
 }));
 
-const PORT = 8080; // default port 8080
-
-const generateRandomString = () => {
-  let result           = '';
-  const characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  for (let i = 0; i < 5; i++) {
-    result += characters.charAt(Math.floor(Math.random() * 62));
-  }
-  return result;
-};
-
-const allShortUrlOfAnId = (id) => {
-  const allURL = {};
-  for (const shortURL in urlDatabase) {
-    if (urlDatabase[shortURL].userID === id) {
-      allURL[shortURL] = urlDatabase[shortURL];
-    }
-  }
-  return allURL;
-};
 
 const urlDatabase = {
   b6UTxQ: {
@@ -75,7 +56,7 @@ app.get("/u/:shortURL", (req, res) => {
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   delete urlDatabase[req.params.shortURL];
-  const templateVars = { urls: allShortUrlOfAnId(req.session.userId), user: users[req.session.userId] };
+  const templateVars = { urls: allShortUrlOfAnId(req.session.userId, urlDatabase), user: users[req.session.userId] };
   res.render("urls_index", templateVars);
 });
 
@@ -115,7 +96,7 @@ app.get("/urls/new", (req, res) => {
 app.post("/urls/:shortURL", (req, res) => {
   if (req.session.userId && req.session.userId === urlDatabase[req.params.shortURL].userID) {
     urlDatabase[req.params.shortURL].longURL = req.body.newURL;
-    const templateVars = { urls: allShortUrlOfAnId(req.session.userId), user: users[req.session.userId] };
+    const templateVars = { urls: allShortUrlOfAnId(req.session.userId, urlDatabase), user: users[req.session.userId] };
     res.render("urls_index", templateVars);
   } else {
     res.redirect("/login");
@@ -123,7 +104,7 @@ app.post("/urls/:shortURL", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { user: users[req.session.userId], urls: allShortUrlOfAnId(req.session.userId) };
+  const templateVars = { user: users[req.session.userId], urls: allShortUrlOfAnId(req.session.userId, urlDatabase) };
   res.render("urls_index", templateVars);
 });
 
