@@ -24,12 +24,14 @@ const urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
     userID: "user2RandomID",
-    visited: 0
+    visited: 0,
+    uniqueViewer: []
   },
   i3BoGr: {
     longURL: "https://www.google.ca",
     userID: "userRandomID",
-    visited: 0
+    visited: 0,
+    uniqueViewer: []
   }
 };
 
@@ -56,6 +58,9 @@ app.get("/", (req, res) => {
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL].longURL;
   urlDatabase[req.params.shortURL].visited += 1;
+  if (!urlDatabase[req.params.shortURL].uniqueViewer.includes(req.session.userId)) {
+    urlDatabase[req.params.shortURL].uniqueViewer.push(req.session.userId);
+  }
   res.redirect(longURL);
 });
 
@@ -68,7 +73,7 @@ app.delete("/urls/:shortURL/delete", (req, res) => {
 app.post("/urls", (req, res) => {
   if (req.session.userId) {
     const tinyURL = generateRandomString();
-    urlDatabase[tinyURL] = {longURL: req.body.longURL, userID: req.session.userId, visited: 0};
+    urlDatabase[tinyURL] = {longURL: req.body.longURL, userID: req.session.userId, visited: 0, uniqueViewer: []};
     res.render("urls_show", { shortURL: tinyURL, longURL: req.body.longURL, user: users[req.session.userId] });
   } else {
     res.redirect("/login");
