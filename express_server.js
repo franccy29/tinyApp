@@ -119,8 +119,9 @@ app.post("/urls/:shortURL", (req, res) => {
     urlDatabase[req.params.shortURL].longURL = req.body.newURL;
     const templateVars = { urls: allShortUrlOfAnId(req.session.userId, urlDatabase), user: users[req.session.userId] };
     res.render("urls_index", templateVars);
+  } else {
+    res.redirect("/login");
   }
-  res.redirect("/login");
 });
 
 app.get("/urls", (req, res) => {
