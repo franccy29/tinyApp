@@ -1,6 +1,5 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
 const salt = bcrypt.genSaltSync(10);
 const cookieSession = require('cookie-session');
@@ -12,7 +11,6 @@ const app = express();
 app.set('view engine', 'ejs');
 
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser());
 app.use(cookieSession({
   name: 'session',
   keys: ["Some way to encrypt the values", "$!~`yEs123bla!!%"]
