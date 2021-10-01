@@ -4,7 +4,7 @@ const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
 const salt = bcrypt.genSaltSync(10);
 const cookieSession = require('cookie-session');
-const {emailAlreadyExist, allShortUrlOfAnId, generateRandomString} = require("./helper");
+const {emailAlreadyExist, allShortUrlOfAnId, generateRandomString, getDate} = require("./helper");
 const methodOverride = require('method-override');
 
 const PORT = 8080; // default port 8080
@@ -24,14 +24,14 @@ const urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
     userID: "user2RandomID",
-    visited: 0,
-    uniqueViewer: []
+    visited: [],
+    uniqueViewer: 0
   },
   i3BoGr: {
     longURL: "https://www.google.ca",
     userID: "userRandomID",
-    visited: 0,
-    uniqueViewer: []
+    visited: [],
+    uniqueViewer: 0
   }
 };
 
@@ -57,9 +57,17 @@ app.get("/", (req, res) => {
 
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL].longURL;
-  urlDatabase[req.params.shortURL].visited += 1;
-  if (!urlDatabase[req.params.shortURL].uniqueViewer.includes(req.session.userId)) {
-    urlDatabase[req.params.shortURL].uniqueViewer.push(req.session.userId);
+  let alreadySeen = false;
+  urlDatabase[req.params.shortURL].visited.forEach(views => {
+    if (views[0] === req.session.userId) {
+      return alreadySeen = true;
+    }
+  });
+  if (!urlDatabase[req.params.shortURL].visited.includes(req.session.userId)) {
+    urlDatabase[req.params.shortURL].visited.push([req.session.userId, getDate()]);
+  }
+  if (!alreadySeen) {
+    urlDatabase[req.params.shortURL].uniqueViewer += 1;
   }
   res.redirect(longURL);
 });
@@ -73,8 +81,8 @@ app.delete("/urls/:shortURL/delete", (req, res) => {
 app.post("/urls", (req, res) => {
   if (req.session.userId) {
     const tinyURL = generateRandomString();
-    urlDatabase[tinyURL] = {longURL: req.body.longURL, userID: req.session.userId, visited: 0, uniqueViewer: []};
-    res.render("urls_show", { shortURL: tinyURL, longURL: req.body.longURL, user: users[req.session.userId] });
+    urlDatabase[tinyURL] = {longURL: req.body.longURL, userID: req.session.userId, visited: [], uniqueViewer: 0};
+    res.render("urls_show", { shortURL: tinyURL, longURL: req.body.longURL, user: users[req.session.userId], track: urlDatabase[tinyURL].visited });
   } else {
     res.redirect("/login");
   }
@@ -120,7 +128,7 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   if (req.session.userId && req.session.userId === urlDatabase[req.params.shortURL].userID) {
-    const templateVars = { user: users[req.session.userId], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL };
+    const templateVars = { user: users[req.session.userId], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, track: urlDatabase[req.params.shortURL].visited };
     res.render("urls_show", templateVars);
   } else {
     res.redirect("/login");

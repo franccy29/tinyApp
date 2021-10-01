@@ -28,8 +28,8 @@
           <tr>
             <td><a href=<%= `/u/${url}` %>><%= url %></a></td>
             <td><%= urls[url].longURL %></td>
-            <td> <%= urls[url].uniqueViewer.length %> </td>
-            <td> <%= urls[url].visited %> </td>
+            <td> <%= urls[url].visited.length %> </td>
+            <td> <%= urls[url].uniqueViewer %> </td>
             <td>
               <form id=<%=`${url}`%> method="POST" action=<%=`/urls/${url}/edit?_method=PUT`%> >  </form>
               <button form= <%= `${url}` %> type="Edit" class="btn btn-primary">Edit</button>
