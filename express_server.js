@@ -52,10 +52,13 @@ const users = {
 };
 
 app.get("/", (req, res) => {
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 app.get("/u/:shortURL", (req, res) => {
+  if (!urlDatabase[req.params.shortURL]) {
+    res.send("The url you are trying to reach does not exist.");
+  }
   const longURL = urlDatabase[req.params.shortURL].longURL;
   let alreadySeen = false;
   urlDatabase[req.params.shortURL].visited.forEach(views => {
@@ -116,9 +119,8 @@ app.post("/urls/:shortURL", (req, res) => {
     urlDatabase[req.params.shortURL].longURL = req.body.newURL;
     const templateVars = { urls: allShortUrlOfAnId(req.session.userId, urlDatabase), user: users[req.session.userId] };
     res.render("urls_index", templateVars);
-  } else {
-    res.redirect("/login");
   }
+  res.redirect("/login");
 });
 
 app.get("/urls", (req, res) => {
@@ -127,12 +129,17 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  if (req.session.userId && req.session.userId === urlDatabase[req.params.shortURL].userID) {
+  if (!urlDatabase[req.params.shortURL]) {
+    res.send("The shortend url you are trying to reach does not exist.");
+  } else if (req.session.userId && req.session.userId !== urlDatabase[req.params.shortURL].userID) {
+    res.send("you are trying to reach a tiny url that doesnt belongs to you.");
+  } else if (req.session.userId && req.session.userId === urlDatabase[req.params.shortURL].userID) {
     const templateVars = { user: users[req.session.userId], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, track: urlDatabase[req.params.shortURL].visited };
     res.render("urls_show", templateVars);
   } else {
     res.redirect("/login");
   }
+
 });
 
 app.get("/register", (req, res) => {
@@ -163,10 +170,10 @@ app.post("/login", (req, res) => {
       req.session.userId = id;
       res.redirect("/urls");
     } else {
-      res.status(403);
+      res.status(403).send("Bad password.");
     }
   } else {
-    res.status(403).redirect("/register");
+    res.status(403).send("you've entered some bad credentials.");
   }
 });
 
